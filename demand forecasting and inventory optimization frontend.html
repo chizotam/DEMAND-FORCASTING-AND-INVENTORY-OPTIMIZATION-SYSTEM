@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Demand Forecasting &amp; Inventory Optimization System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#EEF2F5;--panel:#fff;--ink:#12263A;--mute:#5A6B7B;--line:#C9D3DC;--reorder:#C2410C;--hold:#1B7F6B}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 16px/1.5 Archivo,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+main{max-width:980px;margin:0 auto;padding:40px 20px 56px}
+h1{font-size:clamp(30px,5.2vw,50px);line-height:1.04;margin:0 0 12px;font-weight:800;font-stretch:78%;letter-spacing:-.01em}
+.lede{max-width:62ch;color:var(--mute);margin:0 0 32px}
+.layout{display:grid;grid-template-columns:300px 1fr;gap:28px;align-items:start}
+@media(max-width:800px){.layout{grid-template-columns:1fr}}
+form{background:var(--panel);border:1px solid var(--line);padding:20px;display:grid;gap:16px}
+label{display:grid;gap:6px;font-weight:600;font-size:14px}
+label small{font-weight:400;color:var(--mute)}
+select,input{font:inherit;padding:10px;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:0;width:100%}
+select:focus-visible,input:focus-visible,button:focus-visible{outline:3px solid #2F6FED;outline-offset:2px}
+button{font:inherit;font-weight:700;background:var(--ink);color:#fff;border:0;padding:13px;cursor:pointer}
+button:hover{background:#1d3b59}
+.flow{list-style:none;margin:0;padding:0;display:grid;gap:0}
+.step{background:var(--panel);border:1px solid var(--line);padding:14px 18px;position:relative;opacity:1;transition:opacity .35s,transform .35s}
+.step.hide{opacity:.15;transform:translateY(6px)}
+.step+.step{margin-top:26px}
+.step+.step::before{content:"";position:absolute;left:28px;top:-26px;height:26px;border-left:2px solid var(--ink)}
+.step+.step::after{content:"";position:absolute;left:23px;top:-9px;border:6px solid transparent;border-top:8px solid var(--ink);border-bottom:0}
+.k{font-size:14px;color:var(--mute);margin:0}
+.v{font-size:30px;font-weight:800;font-stretch:80%;line-height:1.15;margin:0}
+.v span{font-size:15px;font-weight:500;color:var(--mute);font-stretch:100%}
+.how{font-size:14px;color:var(--mute);margin:2px 0 0}
+.gauge{margin-top:14px;height:14px;background:#DCE4EA;position:relative}
+.fill{position:absolute;inset:0 auto 0 0;background:var(--ink);transition:width .5s}
+.tick{position:absolute;top:-6px;bottom:-6px;border-left:3px solid var(--reorder);transition:left .5s}
+.gl{display:flex;justify-content:space-between;font-size:13px;color:var(--mute);margin-top:6px}
+.branch{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:26px;position:relative}
+.branch::before{content:"";position:absolute;left:28px;top:-26px;height:26px;border-left:2px solid var(--ink)}
+.out{border:2px solid var(--line);padding:14px 18px;background:var(--panel);opacity:.4;transition:all .35s}
+.out h3{margin:0;font-size:24px;font-weight:800;font-stretch:80%}
+.out p{margin:2px 0 0;font-size:14px}
+.out.on{opacity:1}
+.out.yes.on{border-color:var(--reorder);background:var(--reorder);color:#fff}
+.out.no.on{border-color:var(--hold);background:var(--hold);color:#fff}
+.out .t{font-size:14px;font-weight:600;margin:0 0 4px}
+@media(max-width:520px){.branch{grid-template-columns:1fr}}
+.note{margin-top:32px;font-size:14px;color:var(--mute);max-width:78ch}
+.note b{color:var(--ink)}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+<h1>Demand Forecasting &amp; Inventory Optimization System</h1>
+<p class="lede">Pick a product and store, say how many units are on the shelf, and see whether to reorder. Demand forecasts come from a LightGBM model trained on the M5 retail data; the reorder logic below runs right here in your browser.</p>
+
+<div class="layout">
+<form id="f" aria-label="Simulator inputs">
+  <label>Product <select id="prod"></select></label>
+  <label>Store <select id="store"></select><small id="storeNote"></small></label>
+  <label>Service level
+    <select id="sl"><option value="90">90%</option><option value="95" selected>95%</option><option value="98">98%</option></select>
+    <small>Chance of not running out during one lead time.</small>
+  </label>
+  <label>Lead time (days) <input id="lt" type="number" min="1" max="60" step="1" value="7">
+    <small>Days between placing an order and receiving the stock.</small>
+  </label>
+  <label>Current inventory (units) <input id="inv" type="number" min="0" step="1" value="10"></label>
+  <label>Units already on order <small>Optional. Counted with current inventory.</small><input id="oo" type="number" min="0" step="1" value="0"></label>
+  <button type="submit">Analyze</button>
+</form>
+
+<div aria-live="polite">
+<ol class="flow" id="flow">
+  <li class="step"><p class="k">ML forecast</p><p class="v" id="avg"></p><p class="how" id="avgH"></p></li>
+  <li class="step"><p class="k" id="ltdK">Expected demand during lead time</p><p class="v" id="ltd"></p><p class="how" id="ltdH"></p></li>
+  <li class="step"><p class="k">Safety stock</p><p class="v" id="ss"></p><p class="how" id="ssH"></p></li>
+  <li class="step"><p class="k">Reorder point</p><p class="v" id="rop"></p><p class="how" id="ropH"></p></li>
+  <li class="step"><p class="k">Is inventory ≤ reorder point?</p><p class="v" id="cmp"></p><p class="how" id="cmpH"></p>
+    <div class="gauge"><div class="fill" id="fill"></div><div class="tick" id="tick"></div></div>
+    <div class="gl"><span>0</span><span>Orange line = reorder point</span></div>
+  </li>
+</ol>
+<div class="branch">
+  <div class="out yes" id="yes"><p class="t">Yes</p><h3>REORDER</h3><p id="qty"></p></div>
+  <div class="out no" id="no"><p class="t">No</p><h3>HOLD STOCK</h3><p id="hold"></p></div>
+</div>
+</div>
+</div>
+
+<p class="note"><b>How it works.</b> The model's forecasts were generated offline in Python for <span id="per"></span>. For each product-store pair the page stores two numbers: average forecast demand per day and the standard deviation of the forecast error. Everything else is computed live with the same formulas as the notebook: lead-time demand = daily demand × lead time; safety stock = z × error std × √lead time; reorder point = lead-time demand + safety stock; reorder when inventory + on-order ≤ reorder point; order quantity = <code>Math.ceil(Math.max(lead_time_demand, 1))</code>. Lead time defaults to 7 days, the value used in the notebook, and is assumed fixed, with daily forecast errors independent. Service levels use z = 1.2816 (90%), 1.645 (95%) and 2.0537 (98%). This is a sample of 150 product-store pairs (15 products × 10 stores), not the full catalog.</p>
+</main>
+
+<script>
+const META={start:"2016-03-26",end:"2016-04-24"};
+/* Exported from the Python pipeline. For each product, one [avg_daily_demand, forecast_error_std] pair per store, in the order of S. */
+const S=["CA_1","CA_2","CA_3","CA_4","TX_1","TX_2","TX_3","WI_1","WI_2","WI_3"];
+const P={
+"FOODS_1_001":[[1.129686,1.374049],[0.919936,2.758877],[1.20182,3.204126],[0.392628,0.627863],[0.331224,0.278994],[0.496064,0.837021],[0.474936,0.659973],[0.468606,1.531668],[0.406494,0.847587],[0.320296,0.829002]],
+"FOODS_2_160":[[0.352571,0.880861],[0.428736,0.801614],[0.418186,0.96916],[0.354746,0.674495],[0.151164,0.319765],[0.124643,0.271662],[0.376252,0.733257],[0.331439,0.680682],[0.235815,0.550357],[0.299466,0.378823]],
+"FOODS_3_087":[[4.464159,2.80932],[4.676178,3.515687],[7.483655,3.74744],[1.762403,1.545524],[3.627841,1.780753],[6.056036,2.379704],[3.272919,2.186316],[1.140634,1.095439],[2.706811,2.14979],[2.158736,1.494452]],
+"FOODS_3_210":[[0.02353,0.016094],[0.021271,0.01554],[0.034224,0.009256],[0.018892,0.007755],[0.017972,0.011086],[0.021972,0.009951],[0.01987,0.008438],[0.017401,0.014236],[0.018324,0.012716],[0.015494,0.014019]],
+"FOODS_3_280":[[0.47251,0.576933],[0.698595,0.692206],[1.207153,1.043374],[0.388825,0.691609],[0.477994,0.723667],[0.632166,0.813245],[0.487584,0.499098],[0.32529,0.552078],[0.25036,0.495689],[0.932123,0.873985]],
+"FOODS_3_325":[[2.339758,1.866127],[1.104821,1.558589],[1.357726,1.163527],[1.126955,1.213044],[0.30731,0.521088],[0.579108,0.753303],[0.572221,0.640554],[1.798804,1.693913],[0.39274,0.745081],[0.682083,1.028916]],
+"FOODS_3_347":[[1.362809,0.984693],[1.713792,1.552285],[2.236075,1.522833],[0.503715,0.755974],[2.594682,1.65482],[2.234976,1.844921],[2.645876,1.660729],[1.296525,0.899503],[5.983365,3.930465],[2.172997,1.84679]],
+"FOODS_3_438":[[0.090286,0.283575],[1.710461,3.735493],[2.391458,3.455011],[2.782633,3.316469],[0.951007,1.399677],[2.163182,1.896991],[1.709735,1.568006],[1.724641,2.239594],[1.070179,1.429604],[1.541845,1.653194]],
+"FOODS_3_481":[[2.442358,2.287074],[1.549529,1.752997],[3.241718,3.532285],[1.315452,1.278407],[0.318349,0.492348],[0.411601,0.668896],[0.601382,0.87267],[1.311549,1.633049],[1.01827,0.882317],[0.462238,0.685412]],
+"FOODS_3_703":[[0.538385,1.225853],[0.911102,1.180597],[0.528924,0.871003],[1.794588,2.063637],[0.396838,0.433741],[0.616883,0.919483],[0.763335,1.230387],[1.560735,1.426232],[1.280751,1.291897],[0.019409,0.015222]],
+"FOODS_3_705":[[1.122812,1.163195],[0.601192,0.702981],[0.874904,0.95187],[0.665285,0.819131],[0.354443,0.739589],[0.651769,0.958911],[0.593394,0.796306],[0.743603,0.755895],[0.844206,1.090287],[0.616421,1.057354]],
+"HOBBIES_2_008":[[0.136629,0.382667],[0.137902,0.455271],[0.24904,0.624832],[0.140042,0.373063],[0.160194,0.350549],[0.178745,0.625591],[0.170777,0.39174],[0.177328,0.370788],[0.091674,0.190618],[0.204338,0.513857]],
+"HOUSEHOLD_2_284":[[0.457329,0.790849],[0.87953,1.414978],[1.186344,1.288948],[0.285253,0.518643],[0.329304,0.69172],[0.531485,1.012042],[0.388029,0.795948],[0.351434,0.57133],[0.215872,0.462931],[0.233125,0.519633]],
+"HOUSEHOLD_2_466":[[0.505902,0.706949],[0.454209,1.286855],[0.700968,0.890169],[0.300353,0.39931],[0.346919,0.636498],[0.259662,0.442652],[0.299628,0.55867],[0.222278,0.285955],[0.486525,0.675695],[0.357299,0.748666]],
+"HOUSEHOLD_2_508":[[0.308068,0.578917],[0.38742,0.572369],[0.429881,0.457838],[0.183662,0.532591],[0.191634,0.511399],[0.175643,0.518215],[0.128871,0.198783],[0.189553,0.406762],[0.187228,0.506616],[0.116283,0.262361]]
+};
+/* Flatten to [item_id, store_id, avg_daily_demand, forecast_error_std] */
+const D=[];
+Object.keys(P).forEach(p=>P[p].forEach((v,i)=>D.push([p,S[i],v[0],v[1]])));
+
+const Z={90:1.2816,95:1.645,98:2.0537};
+const $=id=>document.getElementById(id),f2=n=>n.toFixed(2);
+const prod=$("prod"),store=$("store");
+
+[...new Set(D.map(d=>d[0]))].sort().forEach(p=>prod.add(new Option(p,p)));
+prod.value="FOODS_1_001";
+
+function fillStores(keep){
+  const s=D.filter(d=>d[0]===prod.value).map(d=>d[1]).sort();
+  store.innerHTML="";
+  s.forEach(x=>store.add(new Option(x,x)));
+  store.value=(keep&&s.includes(keep))?keep:s[0];
+  $("storeNote").textContent=s.length===1
+    ? "Only one store has data for this product, so it is selected for you."
+    : s.length+" stores have data for this product. Choose one.";
+}
+fillStores("CA_1");
+
+const fmt=d=>new Date(d+"T00:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
+$("per").textContent=fmt(META.start)+" to "+fmt(META.end);
+
+function run(){
+  const d=D.find(x=>x[0]===prod.value&&x[1]===store.value);if(!d)return;
+  const z=Z[$("sl").value];
+  const L=Math.min(60,Math.max(1,Math.round(+$("lt").value||7)));
+  const inv=Math.max(0,+$("inv").value||0),oo=Math.max(0,+$("oo").value||0);
+  const avg=d[2],sd=d[3];
+  const ltd=avg*L,ss=z*sd*Math.sqrt(L),rop=ltd+ss;
+  const pos=inv+oo,reorder=pos<=rop,qty=Math.ceil(Math.max(ltd,1));
+  $("avg").innerHTML=f2(avg)+" <span>units/day, average forecast</span>";
+  $("avgH").textContent="Typical forecast miss (std): "+f2(sd)+" units/day";
+  $("ltdK").textContent="Expected "+L+"-day demand";
+  $("ltd").innerHTML=f2(ltd)+" <span>units</span>";
+  $("ltdH").textContent=f2(avg)+" × "+L+" days";
+  $("ss").innerHTML=f2(ss)+" <span>units</span>";
+  $("ssH").textContent="z "+z+" × "+f2(sd)+" × √"+L+" ("+$("sl").value+"% service level)";
+  $("rop").innerHTML=f2(rop)+" <span>units</span>";
+  $("ropH").textContent=f2(ltd)+" + "+f2(ss);
+  $("cmp").innerHTML=pos+" "+(reorder?"≤":">")+" "+f2(rop)+" <span>"+(reorder?"Yes":"No")+"</span>";
+  $("cmpH").textContent=oo?"Inventory "+inv+" + on order "+oo+" = "+pos:"Inventory position = "+inv+" units on hand";
+  const max=Math.max(rop*1.5,pos*1.15,5);
+  $("fill").style.width=Math.min(100,pos/max*100)+"%";
+  $("tick").style.left=(rop/max*100)+"%";
+  $("yes").classList.toggle("on",reorder);$("no").classList.toggle("on",!reorder);
+  $("qty").textContent="Order "+qty+" unit"+(qty>1?"s":"");
+  $("hold").textContent="Position is above the reorder point, so order 0.";
+}
+function play(){
+  const s=[...document.querySelectorAll(".step")];
+  if(matchMedia("(prefers-reduced-motion:reduce)").matches){run();return}
+  s.forEach(e=>e.classList.add("hide"));
+  run();
+  s.forEach((e,i)=>setTimeout(()=>e.classList.remove("hide"),120*(i+1)));
+}
+prod.onchange=()=>{fillStores();run()};
+["store","sl","lt","inv","oo"].forEach(id=>$(id).addEventListener("input",run));
+$("f").onsubmit=e=>{e.preventDefault();play()};
+run();
+</script>
+</body>
+</html>
