@@ -77,7 +77,7 @@ The [M5 Forecasting](https://www.kaggle.com/competitions/m5-forecasting-accuracy
 ```
 .
 ├── index.html          # the web interface (forecast data embedded)
-├── images/             # screenshot used in this README
+├── INVENTORY OPTIMIZATION SNIPPET.png          # screenshot used in this README
 ├── README.md
 └── Demand_Forecasting_Inventory_Optimization_Documentation.docx
 ```
@@ -109,7 +109,7 @@ Python, pandas, NumPy, LightGBM, HTML, CSS, JavaScript. Developed on a 16 GB RAM
 
 ## Author
 
-Zplays · [GitHub](https://github.com/chizotam)
+Chiaghanam Chizotam · [GitHub](https://github.com/chizotam)
 
 
 Zplays · [GitHub](https://github.com/chizotam)
