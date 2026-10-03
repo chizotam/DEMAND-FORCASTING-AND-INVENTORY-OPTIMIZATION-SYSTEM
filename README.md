@@ -2,9 +2,9 @@
 
 A machine learning system that forecasts daily retail demand with LightGBM and turns those forecasts into safety stock, reorder points, and replenishment decisions. An interactive web page lets anyone try the decision logic without installing anything.
 
-**[Try the live demo](https://YOUR-USERNAME.github.io/REPO-NAME/)**
+**[Try the live demo](https://chizotam.github.io/DEMAND-FORCASTING-AND-INVENTORY-OPTIMIZATION-SYSTEM/)**
 
-![Reorder decision for FOODS_1_001 at store CA_1](images/reorder.png)
+![Reorder decision for FOODS_1_001 at store CA_1](INVENTORY%20OPTIMIZATION%20SNIPPET.png)
 
 ## What it does
 
@@ -70,26 +70,26 @@ Choose a product, store, service level, lead time, and current inventory. The pa
 
 ## Dataset
 
-The [M5 Forecasting](https://www.kaggle.com/competitions/m5-forecasting-accuracy) retail data: 30,490 product-store series, 1,913 days of sales, plus calendar events and weekly selling prices. About 57.5 million product-store-day rows were created after reshaping, and about 68% of them are zero-sales days. The data is not included in this repository. Download it from Kaggle to rerun the notebooks.
+The [M5 Forecasting](https://www.kaggle.com/competitions/m5-forecasting-accuracy) retail data: 30,490 product-store series, 1,913 days of sales, plus calendar events and weekly selling prices. About 57.5 million product-store-day rows were created after reshaping, and about 68% of them are zero-sales days. The data is not included in this repository. It can be downloaded from Kaggle.
 
-## Repository structure
+## What is in this repository
 
 ```
 .
-├── index.html          # the web interface (data embedded)
-├── notebooks/          # data preparation, modeling, inventory policy and backtest
-├── images/             # screenshots used in this README
-├── docs/               # full technical documentation
-└── README.md
+├── index.html          # the web interface (forecast data embedded)
+├── images/             # screenshot used in this README
+├── README.md
+└── Demand_Forecasting_Inventory_Optimization_Documentation.docx
 ```
 
-<!-- TODO: adjust to match your real folders and notebook names -->
+- `index.html` is the interactive page, with the exported policy data built in.
+- The technical documentation covers the full workflow in detail, including the policy formulas and the backtest.
+
+The full training notebooks and the trained model file are not included in this repository.
 
 ## Running it
 
-**Web interface:** open `index.html` in a browser, or use the live demo link above.
-
-**Notebooks:** download the M5 data from Kaggle, install Python 3 with `pandas`, `numpy` and `lightgbm`, and run the notebooks in order.
+Open the live demo above, or download `index.html` and open it in any browser. No installation or server is needed.
 
 ## Limitations
 
@@ -101,7 +101,7 @@ The [M5 Forecasting](https://www.kaggle.com/competitions/m5-forecasting-accuracy
 
 ## Documentation
 
-Full details, including exploratory analysis, feature engineering, and error analysis, are in [`docs/`](docs/).
+Full details, including exploratory analysis, feature engineering, and error analysis, are in the [technical documentation](Demand_Forecasting_Inventory_Optimization_Documentation.docx).
 
 ## Built with
 
@@ -109,4 +109,7 @@ Python, pandas, NumPy, LightGBM, HTML, CSS, JavaScript. Developed on a 16 GB RAM
 
 ## Author
 
-Your Name · [GitHub](https://github.com/YOUR-USERNAME) · [LinkedIn](https://www.linkedin.com/in/YOUR-PROFILE)
+Zplays · [GitHub](https://github.com/chizotam)
+
+
+Zplays · [GitHub](https://github.com/chizotam)
