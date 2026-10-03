@@ -111,5 +111,3 @@ Python, pandas, NumPy, LightGBM, HTML, CSS, JavaScript. Developed on a 16 GB RAM
 
 Chiaghanam Chizotam · [GitHub](https://github.com/chizotam)
 
-
-Zplays · [GitHub](https://github.com/chizotam)
