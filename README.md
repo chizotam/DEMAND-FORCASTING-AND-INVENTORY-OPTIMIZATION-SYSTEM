@@ -35,7 +35,7 @@ Inventory policy backtest (7-day lead time):
 | 95% service level | 98.91% | 0.36% |
 | 98% service level | 99.38% | 0.18% |
 
-<!-- TODO: add one line saying what the baseline policy was -->
+The baseline policy uses no safety stock. It reorders when inventory position falls to the expected lead-time demand (rounded up to a whole unit) and orders the same quantity as the other policies, so the difference in the table comes from the safety stock alone.
 
 The service level (for example 95%) is the setting used to calculate safety stock. It targets the share of replenishment waiting periods with no stockout. The fill rate and stockout rate above are measured results from the historical backtest, and they are not guarantees of future performance.
 
